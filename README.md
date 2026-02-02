@@ -6,6 +6,7 @@ Tiny Go CLI for Parallel Monitor API. Manage monitors + webhook delivery.
 
 - `PARALLEL_API_KEY` (required)
 - `PARALLEL_WEBHOOK_URL` (required for `enable`, optional for `add`)
+- `PARALLEL_RELAY_TOKEN` (optional; auto-add `metadata.relay_token`)
 - `PARALLEL_API_BASE` (optional, default `https://api.parallel.ai`)
 
 Webhook event types: always `monitor.event.detected`.
@@ -23,4 +24,27 @@ monitor enable <monitor_id> [--json]
 monitor disable <monitor_id> [--json]
 
 monitor remove <monitor_id> [--json]
+```
+
+## Relay
+
+Public webhook relay. Verifies Parallel signature, rate-limits, dedupes, filters, then forwards to tailnet target.
+
+Env:
+
+- `PARALLEL_WEBHOOK_SECRET` (required; from Parallel dashboard)
+- `RELAY_FORWARD_URL` (required; mac mini handler URL)
+- `RELAY_FORWARD_TOKEN` (optional; adds `Authorization: Bearer ...` to forwarded request)
+- `RELAY_LISTEN_ADDR` (default `:8080`)
+- `RELAY_METADATA_TOKEN` (optional; require payload `data.metadata.relay_token` match)
+- `RELAY_ALLOW_MONITOR_IDS` (optional; comma allowlist)
+- `RELAY_MAX_BODY_BYTES` (default `1048576`)
+- `RELAY_REPLAY_WINDOW_SECONDS` (default `600`)
+- `RELAY_RPS` (default `5`)
+- `RELAY_BURST` (default `20`)
+
+Run:
+
+```bash
+relay
 ```

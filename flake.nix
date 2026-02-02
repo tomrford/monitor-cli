@@ -13,25 +13,39 @@
       system: let
         pkgs = import nixpkgs { inherit system; };
 
-        monitorPkg = pkgs.buildGoModule {
-          pname = "monitor";
+        monitorCliPkg = pkgs.buildGoModule {
+          pname = "monitor-cli";
           version = "0.1.0";
           src = ./.;
 
-          subPackages = ["./cmd/monitor"];
+          subPackages = [
+            "./cmd/monitor"
+            "./cmd/relay"
+          ];
 
           vendorHash = null;
           go = pkgs.go;
         };
       in {
         packages = {
-          default = monitorPkg;
-          monitor = monitorPkg;
+          default = monitorCliPkg;
+          monitor = monitorCliPkg;
+          relay = monitorCliPkg;
         };
 
-        apps.default = {
-          type = "app";
-          program = "${monitorPkg}/bin/monitor";
+        apps = {
+          default = {
+            type = "app";
+            program = "${monitorCliPkg}/bin/monitor";
+          };
+          monitor = {
+            type = "app";
+            program = "${monitorCliPkg}/bin/monitor";
+          };
+          relay = {
+            type = "app";
+            program = "${monitorCliPkg}/bin/relay";
+          };
         };
 
         devShells.default = pkgs.mkShell {

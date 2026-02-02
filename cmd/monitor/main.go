@@ -17,6 +17,7 @@ const (
 	envAPIKey     = "PARALLEL_API_KEY"
 	envWebhookURL = "PARALLEL_WEBHOOK_URL"
 	envAPIBase    = "PARALLEL_API_BASE"
+	envRelayToken = "PARALLEL_RELAY_TOKEN"
 
 	defaultAPIBase = "https://api.parallel.ai"
 )
@@ -71,6 +72,7 @@ func usageError(extra string) error {
 	b.WriteString("  " + envAPIKey + " (required)\n")
 	b.WriteString("  " + envWebhookURL + " (required for enable; optional for add)\n")
 	b.WriteString("  " + envAPIBase + " (optional; default " + defaultAPIBase + ")\n")
+	b.WriteString("  " + envRelayToken + " (optional; auto-add metadata.relay_token)\n")
 	return errors.New(b.String())
 }
 
@@ -148,6 +150,7 @@ func cmdAdd(argv []string) error {
 			return fmt.Errorf("invalid --metadata-json: %w", err)
 		}
 	}
+	metadata = withRelayToken(metadata, os.Getenv(envRelayToken))
 
 	var webhook *parallel.MonitorWebhook
 	if !*disabled {
@@ -249,7 +252,7 @@ func cmdEdit(argv []string) error {
 		if err := json.Unmarshal([]byte(*metadataJSON), &metadata); err != nil {
 			return fmt.Errorf("invalid --metadata-json: %w", err)
 		}
-		req.Metadata = metadata
+		req.Metadata = withRelayToken(metadata, os.Getenv(envRelayToken))
 		changed = true
 	}
 
@@ -273,6 +276,20 @@ func cmdEdit(argv []string) error {
 	}
 	fmt.Printf("%s\tupdated\n", updated.MonitorID)
 	return nil
+}
+
+func withRelayToken(metadata map[string]string, token string) map[string]string {
+	t := strings.TrimSpace(token)
+	if t == "" {
+		return metadata
+	}
+	if metadata == nil {
+		metadata = map[string]string{}
+	}
+	if _, ok := metadata["relay_token"]; !ok {
+		metadata["relay_token"] = t
+	}
+	return metadata
 }
 
 func cmdDisable(argv []string) error {
