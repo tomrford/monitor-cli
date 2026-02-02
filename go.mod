@@ -1,3 +1,3 @@
-module github.com/tomford/monitor-cli
+module github.com/tomrford/monitor-cli
 
 go 1.24.0

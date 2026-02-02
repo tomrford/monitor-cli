@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tomford/monitor-cli/internal/parallel"
+	"github.com/tomrford/monitor-cli/internal/parallel"
 )
 
 const (
