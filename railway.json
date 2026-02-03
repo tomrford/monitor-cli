@@ -1,0 +1,10 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "buildCommand": "go build -o relay ./cmd/relay"
+  },
+  "deploy": {
+    "startCommand": "./relay"
+  }
+}
+

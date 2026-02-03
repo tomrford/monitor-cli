@@ -40,7 +40,11 @@ func LoadConfigFromEnv(keys Env) (Config, error) {
 
 	cfg.ListenAddr = strings.TrimSpace(os.Getenv(keys.ListenAddr))
 	if cfg.ListenAddr == "" {
-		cfg.ListenAddr = ":8080"
+		if port := strings.TrimSpace(os.Getenv("PORT")); port != "" {
+			cfg.ListenAddr = ":" + port
+		} else {
+			cfg.ListenAddr = ":8080"
+		}
 	}
 
 	cfg.ForwardURL = strings.TrimSpace(os.Getenv(keys.ForwardURL))
