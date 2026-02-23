@@ -63,8 +63,8 @@ func usageError(extra string) error {
 	}
 	b.WriteString("usage:\n")
 	b.WriteString("  monitor list [--json]\n")
-	b.WriteString("  monitor add --query \"...\" [--cadence daily|weekly|hourly|every_two_weeks] [--metadata-json '{}'] [--disabled] [--json]\n")
-	b.WriteString("  monitor edit <monitor_id> [--query \"...\"] [--cadence daily|weekly|hourly|every_two_weeks] [--metadata-json '{}'] [--json]\n")
+	b.WriteString("  monitor add --query \"...\" [--cadence daily|weekly|hourly] [--metadata-json '{}'] [--disabled] [--json]\n")
+	b.WriteString("  monitor edit <monitor_id> [--query \"...\"] [--cadence daily|weekly|hourly] [--metadata-json '{}'] [--json]\n")
 	b.WriteString("  monitor enable <monitor_id> [--json]\n")
 	b.WriteString("  monitor disable <monitor_id> [--json]\n")
 	b.WriteString("  monitor remove <monitor_id> [--json]\n\n")
@@ -143,6 +143,10 @@ func cmdAdd(argv []string) error {
 	if strings.TrimSpace(*query) == "" {
 		return usageError("missing --query")
 	}
+	normalizedCadence, err := normalizeCadence(*cadence)
+	if err != nil {
+		return usageError(err.Error())
+	}
 
 	var metadata map[string]string
 	if strings.TrimSpace(*metadataJSON) != "" {
@@ -169,7 +173,7 @@ func cmdAdd(argv []string) error {
 	ctx := context.Background()
 	created, err := client.CreateMonitor(ctx, parallel.CreateMonitorRequest{
 		Query:    *query,
-		Cadence:  *cadence,
+		Cadence:  normalizedCadence,
 		Webhook:  webhook,
 		Metadata: metadata,
 	})
@@ -243,8 +247,11 @@ func cmdEdit(argv []string) error {
 		changed = true
 	}
 	if strings.TrimSpace(*cadence) != "" {
-		c := *cadence
-		req.Cadence = &c
+		normalizedCadence, err := normalizeCadence(*cadence)
+		if err != nil {
+			return usageError(err.Error())
+		}
+		req.Cadence = &normalizedCadence
 		changed = true
 	}
 	if strings.TrimSpace(*metadataJSON) != "" {
@@ -290,6 +297,16 @@ func withRelayToken(metadata map[string]string, token string) map[string]string 
 		metadata["relay_token"] = t
 	}
 	return metadata
+}
+
+func normalizeCadence(cadence string) (string, error) {
+	normalized := strings.ToLower(strings.TrimSpace(cadence))
+	switch normalized {
+	case "hourly", "daily", "weekly":
+		return normalized, nil
+	default:
+		return "", fmt.Errorf("invalid --cadence (allowed: hourly, daily, weekly)")
+	}
 }
 
 func cmdDisable(argv []string) error {

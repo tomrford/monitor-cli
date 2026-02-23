@@ -23,7 +23,10 @@ func NewServer(cfg Config) http.Handler {
 
 	dedupe := NewDedupe(1 * time.Hour)
 	lim := NewTokenBucket(cfg.RPS, cfg.Burst)
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := cfg.ForwardHTTPClient
+	if client == nil {
+		client = &http.Client{Timeout: 15 * time.Second}
+	}
 	nowFn := cfg.Now
 	if nowFn == nil {
 		nowFn = time.Now

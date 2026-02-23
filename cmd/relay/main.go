@@ -51,6 +51,15 @@ func run() error {
 		return err
 	}
 
+	forwardClient, err := newForwardHTTPClientFromEnv()
+	if err != nil {
+		return err
+	}
+	cfg.ForwardHTTPClient = forwardClient.Client
+	if forwardClient.Close != nil {
+		defer forwardClient.Close()
+	}
+
 	srv := &http.Server{
 		Addr:              cfg.ListenAddr,
 		Handler:           relay.NewServer(cfg),
@@ -62,7 +71,7 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("listening addr=%s forward_url=%s", cfg.ListenAddr, cfg.ForwardURL)
+		log.Printf("listening addr=%s forward_url=%s tailscale_enabled=%t", cfg.ListenAddr, cfg.ForwardURL, forwardClient.TailscaleEnabled)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}

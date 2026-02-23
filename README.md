@@ -16,9 +16,9 @@ Webhook event types: always `monitor.event.detected`.
 ```bash
 monitor list [--json]
 
-monitor add --query "..." [--cadence daily|weekly|hourly|every_two_weeks] [--metadata-json '{}'] [--disabled] [--json]
+monitor add --query "..." [--cadence daily|weekly|hourly] [--metadata-json '{}'] [--disabled] [--json]
 
-monitor edit <monitor_id> [--query "..."] [--cadence daily|weekly|hourly|every_two_weeks] [--metadata-json '{}'] [--json]
+monitor edit <monitor_id> [--query "..."] [--cadence daily|weekly|hourly] [--metadata-json '{}'] [--json]
 
 monitor enable <monitor_id> [--json]
 monitor disable <monitor_id> [--json]
@@ -42,9 +42,15 @@ Env:
 - `RELAY_REPLAY_WINDOW_SECONDS` (default `600`)
 - `RELAY_RPS` (default `5`)
 - `RELAY_BURST` (default `20`)
+- `RELAY_TS_AUTHKEY` (optional; enables outbound tailnet dialing when set with `RELAY_TS_HOSTNAME`)
+- `RELAY_TS_HOSTNAME` (optional; tsnet hostname for this relay node)
+- `RELAY_TS_STATE_DIR` (optional; tsnet state path for persistent identity)
+- `RELAY_TS_EPHEMERAL` (optional; default `true`)
 
 Run:
 
 ```bash
 relay
 ```
+
+With Tailscale enabled, set `RELAY_FORWARD_URL` to your tailnet host, e.g. `http://macmini.tail91b66e.ts.net:18789/hooks/agent`.

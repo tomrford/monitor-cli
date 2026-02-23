@@ -92,3 +92,65 @@ func TestVerifyParallelSignature_ReplayWindow(t *testing.T) {
 		t.Fatalf("expected replay window err")
 	}
 }
+
+func TestRelay_UsesInjectedForwardHTTPClient(t *testing.T) {
+	t.Parallel()
+
+	secret := "s3cr3t"
+	now := time.Unix(1738450000, 0)
+
+	called := false
+	client := &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			called = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(nil)),
+				Header:     make(http.Header),
+				Request:    req,
+			}, nil
+		}),
+		Timeout: 2 * time.Second,
+	}
+
+	cfg := Config{
+		ListenAddr:        ":0",
+		ForwardURL:        "http://does-not-resolve.invalid/hooks/agent",
+		ForwardHTTPClient: client,
+		WebhookSecret:     secret,
+		MaxBodyBytes:      1 << 20,
+		ReplayWindow:      10 * time.Minute,
+		RPS:               100,
+		Burst:             100,
+		Now:               func() time.Time { return now },
+	}
+	h := NewServer(cfg)
+
+	body := []byte(`{"type":"monitor.event.detected","timestamp":"2025-02-01T16:40:34Z","data":{"monitor_id":"m1","event":{"event_group_id":"eg1"},"metadata":{"relay_token":"x"}}}`)
+	id := "msg_2"
+	ts := "1738450000"
+	sig := computeSignature(secret, id, ts, body)
+
+	req := httptest.NewRequest(http.MethodPost, "/parallel/webhook", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerWebhookID, id)
+	req.Header.Set(headerWebhookTimestamp, ts)
+	req.Header.Set(headerWebhookSignature, "v1,"+sig)
+
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if !called {
+		t.Fatalf("expected injected client transport to be called")
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+var _ http.RoundTripper = roundTripFunc(nil)

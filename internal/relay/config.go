@@ -2,6 +2,7 @@ package relay
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -22,17 +23,18 @@ type Env struct {
 }
 
 type Config struct {
-	ListenAddr      string
-	ForwardURL      string
-	ForwardToken    string
-	WebhookSecret   string
-	MetadataToken   string
-	AllowedMonitors map[string]struct{}
-	MaxBodyBytes    int64
-	ReplayWindow    time.Duration
-	RPS             float64
-	Burst           float64
-	Now             func() time.Time
+	ListenAddr        string
+	ForwardURL        string
+	ForwardToken      string
+	ForwardHTTPClient *http.Client
+	WebhookSecret     string
+	MetadataToken     string
+	AllowedMonitors   map[string]struct{}
+	MaxBodyBytes      int64
+	ReplayWindow      time.Duration
+	RPS               float64
+	Burst             float64
+	Now               func() time.Time
 }
 
 func LoadConfigFromEnv(keys Env) (Config, error) {
